@@ -12,7 +12,7 @@ from models import Table
 
 @app.route('/')
 def index():
-    fields = Table.query.order_by(Table.name, Table.quantity, Table.distance).all()
+    fields = Table.query.all()
     return render_template('tables/index.html', fields=fields)
 
 
