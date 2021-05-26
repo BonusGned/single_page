@@ -6,8 +6,9 @@
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    <script
+            src="https://code.jquery.com/jquery-3.6.0.js"
+            integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
             crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
             integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
@@ -21,66 +22,153 @@
 <div class="container-fluid">
     <div class="row" style="margin-top: 30px; padding-left: 65px">
 
-    <div>
-        <select class="form-select" aria-label="Default select example">
-            <option selected>Колонка</option>
-            <option value="1">#</option>
-        </select>
+        <form action="" method="post" autocomplete="off" id="filter">
+            <div>
+                <select class="form-select" aria-label="Default select example" name="column" id="column">
+                    <option selected>Колонка</option>
+                    <option value="name">Название</option>
+                    <option value="quantity">Количество</option>
+                    <option value="distance">Расстояние</option>
+                </select>
 
-        <select class="form-select" aria-label="Default select example">
-            <option selected>Условие</option>
-            <option value="1">=</option>
-            <option value="2"> > </option>
-            <option value="3"> < </option>
-            <option value="3"> Содержит </option>
-        </select>
+                <select class="form-select" name="condition" id="condition">
+                    <option selected>Условие</option>
+                    <option value="=">=</option>
+                    <option value=">"> ></option>
+                    <option value="<"> <</option>
+                    <option value="contains">Содержит</option>
+                </select>
 
-        <input type="text" class="form-control" placeholder="Значение" aria-label="Recipient's username"
-               aria-describedby="basic-addon2"><br>
+                <input type="text" class="form-control" placeholder="Значение" aria-label="Recipient's username"
+                       aria-describedby="basic-addon2" name="search_value" id="search_value"><br>
+                <input type="submit" value="Search" class="form-control btn btn-primary " id="search"
+                       onclick="ajaxFilter()">
+            </div>
 
-    </div>
-    <div class="col-9">
-        <table class="table table-bordered">
-            <thead>
-            <tr>
-                <th scope="col">Дата</th>
-                <th scope="col">Название</th>
-                <th scope="col">Количество</th>
-                <th scope="col">Расстояние</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for field in fields %}
+        </form>
+
+        <div id="table" class="col-9">
+            <table class="table table-bordered">
+                <thead>
                 <tr>
-                    <td id="date">{{ field.date }}</td>
-                    <td id="name">{{ field.name }}</td>
-                    <td id="quantity">{{ field.quantity }}</td>
-                    <td id="distance">{{ field.distance }}</td>
+                    <th scope="col">Дата</th>
+                    <th scope="col">Название</th>
+                    <th scope="col">Количество</th>
+                    <th scope="col">Расстояние</th>
                 </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                {% for field in fields.items %}
+                    <tr>
+                        <td id="date">{{ field.date }}</td>
+                        <td id="name">{{ field.name }}</td>
+                        <td id="quantity">{{ field.quantity }}</td>
+                        <td id="distance">{{ field.distance }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
         <!-- Пагинация -->
 
-        <nav aria-label="...">
+        <nav id="pagination" aria-label="Page navigation example">
             <ul class="pagination">
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1">Previous</a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item active">
-                    <a class="page-link" href="#">2 <span class="sr-only">(current)</span></a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
-                </li>
+                {% if fields.has_prev %}
+                    <li class="page-item"><a class="page-link"
+                                             href="{{ url_for('index', page=fields.prev_num) }}">Назад</a>
+                    </li>
+                {% else %}
+                    <li class="page-item"><a class="page-link btn disabled" href="#">Назад</a></li>
+                {% endif %}
+
+                {% for page in fields.iter_pages(left_edge=3, right_edge=3) %}
+                    {% if page %}
+
+                        {% if page==fields.page %}
+                            <li class="page-item active"><a class="page-link"
+                                                            href="{{ url_for('index', page=page) }}">{{ page }}</a></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link"
+                                                     href="{{ url_for('index', page=page) }}">{{ page }}</a></li>
+                        {% endif %}
+
+                    {% else %}
+                        <li class="page-item disabled" id="example_ellipsis"><a href="#" class="page-link">…</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if fields.has_next %}
+                    <li class="page-item"><a class="page-link"
+                                             href="{{ url_for('index', page=fields.next_num) }}">Далее</a>
+                    </li>
+                {% else %}
+                    <li class="page-item"><a class="page-link btn disabled" href="#">Далее</a></li>
+                {% endif %}
+
             </ul>
         </nav>
 
     </div>
+
 </div>
+
+<script>
+    function ajaxPagination() {
+        $('#pagination a.page-link').each((index, el) => {
+            $(el).click((e) => {
+                e.preventDefault()
+                let page_url = $(el).attr('href')
+                console.log(page_url)
+
+                $.ajax({
+                    url: page_url,
+                    type: 'GET',
+                    success: (data) => {
+                        $('#table').empty()
+                        $('#table').append($(data).find('#table').html())
+                        $('#pagination').empty()
+                        $('#pagination').append($(data).find('#pagination').html())
+
+                    }
+                })
+            })
+        })
+    }
+
+
+    function ajaxFilter() {
+
+        let column = document.querySelector('#column')
+        let condition = document.querySelector('#condition')
+        let search_value = document.querySelector('#search_value')
+
+        $.ajax({
+            url: 'http://127.0.0.1:5000/',
+            type: 'POST',
+            data: {
+                column: $(column).val(),
+                condition: $(condition).val(),
+                value: $(search_value).val(),
+            },
+            success: (data) => {
+                $('#table').empty()
+                $('#table').append($(data).find('#table').html())
+                $('#pagination').empty()
+                $('#pagination').append($(data).find('#pagination').html())
+
+            }
+        })
+    }
+
+
+    $(document).ready(function () {
+        ajaxPagination()
+    })
+
+    $(document).ajaxStop(function () {
+        ajaxPagination()
+    })
+</script>
 </body>
 </html>
